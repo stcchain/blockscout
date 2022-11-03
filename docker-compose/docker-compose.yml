@@ -11,7 +11,7 @@ services:
       - ./redis-data:/data
 
   db:
-    image: postgres:14
+    image: postgres:13.6
     restart: always
     container_name: 'postgres'
     environment:
