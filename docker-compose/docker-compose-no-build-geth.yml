@@ -8,7 +8,7 @@ services:
     container_name: redis_db
     command: redis-server
     volumes:
-      - ./redis-data:/data
+      - /home/ubuntu/blockscout/redis-data:/data
 
   db:
     image: postgres:14
@@ -19,7 +19,7 @@ services:
         POSTGRES_USER: 'postgres'
         POSTGRES_HOST_AUTH_METHOD: 'trust'
     volumes:
-      - ./postgres-data:/var/lib/postgresql/data
+      - /home/ubuntu/blockscout/postgres-data:/var/lib/postgresql/data
     ports:
       - 7432:5432
 
@@ -33,7 +33,7 @@ services:
     container_name: 'blockscout'
     links:
       - db:database
-    command: bash -c "bin/blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\" && bin/blockscout start"
+    command: bash -c "./blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\" && ./blockscout start"
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     env_file:
@@ -48,7 +48,7 @@ services:
     ports:
       - 4000:4000
     volumes:
-      - ./logs/:/app/logs/
+      - /home/ubuntu/blockscout/logs/:/app/logs/
 
   smart-contract-verifier:
     image: ghcr.io/blockscout/smart-contract-verifier:${SMART_CONTRACT_VERIFIER_DOCKER_TAG:-latest}
