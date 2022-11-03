@@ -46,7 +46,7 @@ services:
     container_name: 'blockscout'
     links:
       - db:database
-    command: bash -c "./blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\" && ./blockscout start"
+    command: bash -c "./blockscout/bin eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\" && ./blockscout/bin/deployment start"
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     env_file:
