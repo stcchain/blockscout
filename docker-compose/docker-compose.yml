@@ -11,7 +11,7 @@ services:
       - home/ubuntu/blockscout/redis-data:/data
 
   db:
-    image: postgres:13.6
+    image: postgres:14
     restart: always
     container_name: 'postgres'
     environment:
