@@ -8,8 +8,8 @@ import Config
 network_path =
   "NETWORK_PATH"
   |> System.get_env("/")
-  |> (&(if !String.ends_with?(&1, "/") do
-          &1 <> "/"
+  |> (&(if String.ends_with?(&1, "/") do
+          String.trim_trailing(&1, "/")
         else
           &1
         end)).()
@@ -17,8 +17,8 @@ network_path =
 api_path =
   "API_PATH"
   |> System.get_env("/")
-  |> (&(if !String.ends_with?(&1, "/") do
-          &1 <> "/"
+  |> (&(if String.ends_with?(&1, "/") do
+          String.trim_trailing(&1, "/")
         else
           &1
         end)).()
@@ -26,12 +26,15 @@ api_path =
 # General application configuration
 config :block_scout_web,
   namespace: BlockScoutWeb,
-  ecto_repos: [Explorer.Repo, Explorer.Repo.Account]
+  ecto_repos: [Explorer.Repo, Explorer.Repo.Account],
+  cookie_domain: System.get_env("SESSION_COOKIE_DOMAIN")
 
 config :block_scout_web,
   admin_panel_enabled: System.get_env("ADMIN_PANEL_ENABLED", "") == "true"
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
+
+config :block_scout_web, BlockScoutWeb.Counters.InternalTransactionsIndexedCounter, enabled: true
 
 # Configures the endpoint
 config :block_scout_web, BlockScoutWeb.Endpoint,
@@ -101,7 +104,7 @@ config :ueberauth, Ueberauth,
   providers: [
     auth0: {
       Ueberauth.Strategy.Auth0,
-      [callback_path: "/auth/auth0/callback"]
+      [callback_path: "/auth/auth0/callback", callback_params: ["path"]]
     }
   ]
 

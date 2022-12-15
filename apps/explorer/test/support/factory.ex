@@ -170,6 +170,13 @@ defmodule Explorer.Factory do
     }
   end
 
+  def unique_address_name_factory do
+    %Address.Name{
+      address: build(:address),
+      name: sequence("FooContract")
+    }
+  end
+
   def unfetched_balance_factory do
     %CoinBalance{
       address_hash: address_hash(),
@@ -547,11 +554,7 @@ defmodule Explorer.Factory do
   end
 
   def pending_block_operation_factory do
-    %PendingBlockOperation{
-      # caller MUST supply block
-      # all operations will default to false
-      fetch_internal_transactions: false
-    }
+    %PendingBlockOperation{}
   end
 
   def internal_transaction_factory() do
@@ -640,6 +643,10 @@ defmodule Explorer.Factory do
       type: "ERC-20",
       cataloged: true
     }
+  end
+
+  def unique_token_factory do
+    Map.replace(token_factory(), :name, sequence("Infinite Token"))
   end
 
   def token_transfer_log_factory do
@@ -796,7 +803,8 @@ defmodule Explorer.Factory do
   def smart_contract_factory do
     contract_code_info = contract_code_info()
 
-    bytecode_md5 = Helper.contract_code_md5(contract_code_info.bytecode)
+    {:ok, data} = Explorer.Chain.Data.cast(contract_code_info.bytecode)
+    bytecode_md5 = Helper.contract_code_md5(data.bytes)
 
     %SmartContract{
       address_hash: insert(:address, contract_code: contract_code_info.bytecode, verified: true).hash,
@@ -807,6 +815,10 @@ defmodule Explorer.Factory do
       abi: contract_code_info.abi,
       contract_code_md5: bytecode_md5
     }
+  end
+
+  def unique_smart_contract_factory do
+    Map.replace(smart_contract_factory(), :name, sequence("SimpleStorage"))
   end
 
   def decompiled_smart_contract_factory do
@@ -839,6 +851,15 @@ defmodule Explorer.Factory do
     }
   end
 
+  def address_coin_balance_factory do
+    %CoinBalance{
+      address: insert(:address),
+      block_number: insert(:block).number,
+      value: Enum.random(1..100_000_000),
+      value_fetched_at: DateTime.utc_now()
+    }
+  end
+
   def address_current_token_balance_factory do
     %CurrentTokenBalance{
       address: build(:address),
@@ -846,6 +867,17 @@ defmodule Explorer.Factory do
       block_number: block_number(),
       value: Enum.random(1..100_000),
       value_fetched_at: DateTime.utc_now()
+    }
+  end
+
+  def address_current_token_balance_with_token_id_factory do
+    %CurrentTokenBalance{
+      address: build(:address),
+      token_contract_address_hash: insert(:token).contract_address_hash,
+      block_number: block_number(),
+      value: Enum.random(1..100_000),
+      value_fetched_at: DateTime.utc_now(),
+      token_id: Enum.random([nil, Enum.random(1..100_000)])
     }
   end
 

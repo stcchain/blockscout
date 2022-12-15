@@ -43,8 +43,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     %{"method_id" => method_id, "method_call" => text, "parameters" => prepare_method_mapping(mapping)}
   end
 
-  def render("revert_reason.json", %{raw: raw, decoded: decoded}) do
-    %{"raw" => raw, "decoded" => decoded}
+  def render("revert_reason.json", %{raw: raw}) do
+    %{"raw" => raw}
   end
 
   def render("token_transfers.json", %{token_transfers: token_transfers, next_page_params: next_page_params, conn: conn}) do
@@ -88,17 +88,18 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "to" => Helper.address_with_info(conn, token_transfer.to_address, token_transfer.to_address_hash),
       "total" => prepare_token_transfer_total(token_transfer),
       "token" => TokenView.render("token.json", %{token: Market.add_price(token_transfer.token)}),
-      "type" => Chain.get_token_transfer_type(token_transfer)
+      "type" => Chain.get_token_transfer_type(token_transfer),
+      "timestamp" => block_timestamp(token_transfer.block)
     }
   end
 
   def prepare_token_transfer_total(token_transfer) do
     case Helpers.token_transfer_amount_for_api(token_transfer) do
       {:ok, :erc721_instance} ->
-        %{"token_id" => token_transfer.token_id}
+        %{"token_id" => List.first(token_transfer.token_ids)}
 
       {:ok, :erc1155_instance, value, decimals} ->
-        %{"token_id" => token_transfer.token_id, "value" => value, "decimals" => decimals}
+        %{"token_id" => List.first(token_transfer.token_ids), "value" => value, "decimals" => decimals}
 
       {:ok, :erc1155_instance, values, token_ids, decimals} ->
         Enum.map(Enum.zip(values, token_ids), fn {value, token_id} ->
@@ -204,7 +205,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "result" => status,
       "status" => transaction.status,
       "block" => transaction.block_number,
-      "timestamp" => transaction.block && transaction.block.timestamp,
+      "timestamp" => block_timestamp(transaction.block),
       "from" => Helper.address_with_info(conn, transaction.from_address, transaction.from_address_hash),
       "to" => Helper.address_with_info(conn, transaction.to_address, transaction.to_address_hash),
       "created_contract" =>
@@ -286,8 +287,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
         _ ->
           hex = TransactionView.get_pure_transaction_revert_reason(transaction)
-          utf8 = TransactionView.decoded_revert_reason(transaction)
-          render(__MODULE__, "revert_reason.json", raw: hex, decoded: utf8)
+          render(__MODULE__, "revert_reason.json", raw: hex)
       end
     end
   end
@@ -444,4 +444,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       types
     end
   end
+
+  defp block_timestamp(%Block{} = block), do: block.timestamp
+  defp block_timestamp(_), do: nil
 end
