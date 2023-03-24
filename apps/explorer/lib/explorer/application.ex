@@ -83,10 +83,9 @@ defmodule Explorer.Application do
   defp configurable_children do
     [
       configure(Explorer.ExchangeRates),
+      configure(Explorer.ExchangeRates.TokenExchangeRates),
       configure(Explorer.ChainSpec.GenesisData),
-      configure(Explorer.KnownTokens),
       configure(Explorer.Market.History.Cataloger),
-      configure(Explorer.Chain.Cache.TokenExchangeRate),
       configure(Explorer.Chain.Cache.ContractsCounter),
       configure(Explorer.Chain.Cache.NewContractsCounter),
       configure(Explorer.Chain.Cache.VerifiedContractsCounter),
@@ -108,7 +107,9 @@ defmodule Explorer.Application do
       configure(Explorer.Validator.MetadataProcessor),
       configure(Explorer.Tags.AddressTag.Cataloger),
       configure(MinMissingBlockNumber),
-      configure(TokenTransferTokenIdMigration.Supervisor)
+      configure(TokenTransferTokenIdMigration.Supervisor),
+      configure(Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand),
+      configure(Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand)
     ]
     |> List.flatten()
   end

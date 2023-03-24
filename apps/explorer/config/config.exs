@@ -76,9 +76,7 @@ config :explorer, Explorer.Chain.Cache.NewVerifiedContractsCounter,
   enable_consolidation: true,
   update_interval_in_seconds: 30 * 60
 
-config :explorer, Explorer.Chain.Cache.TokenExchangeRate,
-  enabled: true,
-  enable_consolidation: true
+config :explorer, Explorer.ExchangeRates.TokenExchangeRates, enabled: true
 
 config :explorer, Explorer.Counters.TokenHoldersCounter,
   enabled: true,
@@ -106,6 +104,10 @@ config :explorer, Explorer.Counters.BlockPriorityFeeCounter,
 
 config :explorer, Explorer.TokenTransferTokenIdMigration.Supervisor, enabled: true
 
+config :explorer, Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand, enabled: true
+
+config :explorer, Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand, enabled: true
+
 config :explorer, Explorer.Chain.Cache.GasUsage,
   enabled: System.get_env("CACHE_ENABLE_TOTAL_GAS_USAGE_COUNTER") == "true"
 
@@ -124,6 +126,8 @@ config :explorer, Explorer.Tracer,
 
 config :explorer,
   solc_bin_api_url: "https://solc-bin.ethereum.org"
+
+config :explorer, :http_adapter, HTTPoison
 
 config :logger, :explorer,
   # keep synced with `config/config.exs`

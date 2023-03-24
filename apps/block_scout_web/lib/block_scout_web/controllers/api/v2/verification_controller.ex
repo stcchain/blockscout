@@ -13,6 +13,8 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
+  @api_true [api?: true]
+
   def config(conn, _params) do
     evm_versions = CodeCompiler.allowed_evm_versions()
     solidity_compiler_versions = CompilerVersion.fetch_version_list(:solc)
@@ -45,7 +47,8 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
       ) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
-         {:already_verified, false} <- {:already_verified, Chain.smart_contract_fully_verified?(address_hash)} do
+         {:already_verified, false} <-
+           {:already_verified, Chain.smart_contract_fully_verified?(address_hash, @api_true)} do
       verification_params =
         %{
           "address_hash" => String.downcase(address_hash_string),
@@ -79,7 +82,8 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
       ) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
-         {:already_verified, false} <- {:already_verified, Chain.smart_contract_fully_verified?(address_hash)},
+         {:already_verified, false} <-
+           {:already_verified, Chain.smart_contract_fully_verified?(address_hash, @api_true)},
          files_array <- PublishHelper.prepare_files_array(files),
          {:no_json_file, %Plug.Upload{path: path}} <-
            {:no_json_file, PublishHelper.get_one_json(files_array)},
@@ -106,14 +110,18 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
            {:not_found, Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:enabled]},
          {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
-         {:already_verified, false} <- {:already_verified, Chain.smart_contract_fully_verified?(address_hash)},
+         {:already_verified, false} <-
+           {:already_verified, Chain.smart_contract_fully_verified?(address_hash, @api_true)},
          files_array <- PublishHelper.prepare_files_array(files),
          {:no_json_file, %Plug.Upload{path: _path}} <-
            {:no_json_file, PublishHelper.get_one_json(files_array)},
          files_content <- PublishHelper.read_files(files_array) do
       chosen_contract = params["chosen_contract_index"]
 
-      Que.add(SolidityPublisherWorker, {"sourcify_api_v2", address_hash_string, files_content, conn, chosen_contract})
+      Que.add(
+        SolidityPublisherWorker,
+        {"sourcify_api_v2", String.downcase(address_hash_string), files_content, conn, chosen_contract}
+      )
 
       conn
       |> put_view(ApiView)
@@ -128,7 +136,8 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
     with {:not_found, true} <- {:not_found, RustVerifierInterface.enabled?()},
          {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
-         {:already_verified, false} <- {:already_verified, Chain.smart_contract_fully_verified?(address_hash)},
+         {:already_verified, false} <-
+           {:already_verified, Chain.smart_contract_fully_verified?(address_hash, @api_true)},
          libraries <- Map.get(params, "libraries", "{}"),
          {:libs_format, {:ok, json}} <- {:libs_format, Jason.decode(libraries)} do
       verification_params =
@@ -164,7 +173,8 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
       ) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
-         {:already_verified, false} <- {:already_verified, Chain.smart_contract_fully_verified?(address_hash)} do
+         {:already_verified, false} <-
+           {:already_verified, Chain.smart_contract_fully_verified?(address_hash, @api_true)} do
       verification_params =
         %{
           "address_hash" => String.downcase(address_hash_string),
@@ -173,7 +183,6 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         }
         |> Map.put("constructor_arguments", Map.get(params, "constructor_args", "") || "")
         |> Map.put("name", Map.get(params, "contract_name", "Vyper_contract"))
-        # |> Map.put("optimization", Map.get(params, "is_optimization_enabled", false))
         |> Map.put("evm_version", Map.get(params, "evm_version", "istanbul"))
 
       Que.add(VyperPublisherWorker, {address_hash_string, verification_params})
@@ -191,13 +200,13 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
     with {:not_found, true} <- {:not_found, RustVerifierInterface.enabled?()},
          {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params),
-         {:already_verified, false} <- {:already_verified, Chain.smart_contract_fully_verified?(address_hash)} do
+         {:already_verified, false} <-
+           {:already_verified, Chain.smart_contract_fully_verified?(address_hash, @api_true)} do
       verification_params =
         %{
           "address_hash" => String.downcase(address_hash_string),
           "compiler_version" => compiler_version
         }
-        # |> Map.put("optimization", Map.get(params, "is_optimization_enabled", false))
         |> Map.put("evm_version", Map.get(params, "evm_version", "istanbul"))
 
       files_array =
